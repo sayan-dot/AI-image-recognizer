@@ -1,5 +1,8 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Image Recognizer</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
@@ -9,27 +12,54 @@
     <a href="https://app.leonardo.ai/" target="_blank">AI image source</a>
     <a href="https://www.pexels.com/" target="_blank">Real image source</a>
     <div class="container">
-      <img id="imagePreview" src="" alt="Your Image Preview" />
-      <input id="imageUpload" type="file" />
+      <img
+        id="imagePreview"
+        src=""
+        alt="Your Image Preview"
+        style="max-width: 100%"
+      />
+      <input id="imageUpload" type="file" accept="image/*" />
+    </div>
+
+    <!-- Loader div (initially hidden) -->
+    <div
+      id="loader"
+      style="display: none; text-align: center; margin-top: 20px"
+    >
+      Loading...
     </div>
 
     <div id="label-container"></div>
     <div id="note">
       <strong>NOTE:</strong> <br />
-      1.The dataset consists of 500 images and is designed to identify
-      <strong>AI-generated landscape and human</strong> images, making it ideal for this
-      scenario. <br />
-      2.Only use images with<strong>.jpg file type</strong>
+      1. The dataset consists of 500 images and is designed to identify
+      <strong>AI-generated landscape and human</strong> images, making it ideal
+      for this scenario. <br />
+      2. Only use images with<strong>.jpg file type</strong>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script type="text/javascript">
       const URL = "https://teachablemachine.withgoogle.com/models/_c_wI-NF_/";
 
       let model, labelContainer, maxPredictions;
 
+      // Show the loader
+      function showLoader() {
+        document.getElementById("loader").style.display = "block";
+      }
+
+      // Hide the loader
+      function hideLoader() {
+        document.getElementById("loader").style.display = "none";
+      }
+
+      // Initialize the model
       async function init() {
+        showLoader(); // Show loader during initialization
+
         const modelURL = URL + "model.json";
         const metadataURL = URL + "metadata.json";
 
@@ -37,47 +67,58 @@
         maxPredictions = model.getTotalClasses();
 
         labelContainer = document.getElementById("label-container");
+        labelContainer.innerHTML = ""; // Clear previous results
         for (let i = 0; i < maxPredictions; i++) {
           labelContainer
             .appendChild(document.createElement("div"))
             .classList.add("prediction-label");
         }
+
+        hideLoader(); // Hide loader after model loads
       }
 
+      // Predict the image
       async function predict() {
-        var image = document.getElementById("imagePreview");
+        showLoader(); // Show loader during prediction
+        const image = document.getElementById("imagePreview");
         const prediction = await model.predict(image, false);
+
         for (let i = 0; i < maxPredictions; i++) {
           const classPrediction =
             prediction[i].className +
             ": " +
             (prediction[i].probability * 100).toFixed(2) +
             "%";
-
           labelContainer.childNodes[i].innerHTML = classPrediction;
         }
-      }
-    </script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script type="text/javascript">
+        hideLoader(); // Hide loader after prediction is done
+      }
+
+      // Handle file input and preview the image
       function readURL(input) {
         if (input.files && input.files[0]) {
           var reader = new FileReader();
           reader.onload = function (e) {
-            $("#imagePreview").attr("src", e.target.result);
-            $("#imagePreview").hide();
-            $("#imagePreview").fadeIn(650);
+            document.getElementById("imagePreview").src = e.target.result;
+            document.getElementById("imagePreview").style.display = "none";
+            document.getElementById("imagePreview").style.display = "block";
           };
           reader.readAsDataURL(input.files[0]);
+
+          // Start initialization and prediction
           init().then(() => {
             predict();
           });
         }
       }
-      $("#imageUpload").change(function () {
-        readURL(this);
-      });
+
+      // Event listener for file input change
+      document
+        .getElementById("imageUpload")
+        .addEventListener("change", function () {
+          readURL(this);
+        });
     </script>
   </body>
 </html>
